@@ -90,4 +90,4 @@ def play():
         valid = False
 
 play()
-
+print("bingus dingus")
