@@ -61,6 +61,12 @@ class Random_Agent:
     def Random_Move(self):
         return random.randint(0, 6)
 
+class Rule_Based_Agent:
+    def __init__(self, game):
+        self.game = game
+        self.AI_Player = "Y"
+        self.Human_Player = "R"
+
 def play(opponent):
     game = Connect4()
     agent = Random_Agent(game)
