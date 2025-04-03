@@ -59,7 +59,7 @@ class Random_Agent:
         self.Human_Player = "R"
 
     def Random_Move(self):
-        return random.randint(0, 6)
+        return random.choice(self.game.find_legal_moves())
 
 class Rule_Based_Agent:
     def __init__(self, game):
@@ -67,11 +67,34 @@ class Rule_Based_Agent:
         self.AI_Player = "Y"
         self.Human_Player = "R"
 
+    def Make_Move(self, Board):
+        for col in self.game.find_legal_moves():
+            for row in range(5, -1, -1):
+                if Board[row, col] == ' ':
+                    Board[row, col] = self.AI_Player
+                    if self.game.check_for_win(self.AI_Player):
+                        Board[row, col] = ' '
+                        return col
+                    Board[row, col] = ' '
+
+        for col in self.game.find_legal_moves():
+            for row in range(5, -1, -1):
+                if Board[row, col] == ' ':
+                    Board[row, col] = self.Human_Player
+                    if self.game.check_for_win(self.Human_Player):
+                        Board[row, col] = ' '
+                        return col
+                    Board[row, col] = ' '
+
+        return random.choice(self.game.find_legal_moves())
+
+
 def play(opponent):
     game = Connect4()
     agent = Random_Agent(game)
     match opponent:
         case 1: agent = Random_Agent(game)
+        case 2: agent = Rule_Based_Agent(game)
     valid = False
     AIvalid = False
     print("Red vs Yellow")
@@ -100,7 +123,13 @@ def play(opponent):
         if opponent == 1:
             while not AIvalid:
                 col = agent.Random_Move()
-                print(col)
+                if col in game.find_legal_moves():
+                    if game.make_move(col, agent.AI_Player):
+                        AIvalid = True
+
+        elif opponent == 2:
+            while not AIvalid:
+                col = agent.Make_Move(game.board)
                 if col in game.find_legal_moves():
                     if game.make_move(col, agent.AI_Player):
                         AIvalid = True
