@@ -12,6 +12,11 @@ class Connect4:
             print(" | ".join(row))
             print("-"*25)
 
+    def reset_board(self):
+        for row in range(6):
+            for col in range(7):
+                self.board[row, col] = ' '
+
     def find_legal_moves(self):
         legal_moves = []
         for row in range(6):
@@ -53,19 +58,19 @@ class Connect4:
         return ' ' not in self.board
 
 class Random_Agent:
-    def __init__(self, game):
+    def __init__(self, game, AI_Player, Human_Player):
         self.game = game
-        self.AI_Player = "Y"
-        self.Human_Player = "R"
+        self.AI_Player = AI_Player
+        self.Human_Player = Human_Player
 
     def Random_Move(self):
         return random.choice(self.game.find_legal_moves())
 
 class Rule_Based_Agent:
-    def __init__(self, game):
+    def __init__(self, game, AI_Player, Human_Player):
         self.game = game
-        self.AI_Player = "Y"
-        self.Human_Player = "R"
+        self.AI_Player = AI_Player
+        self.Human_Player = Human_Player
 
     def Make_Move(self, Board):
         for col in self.game.find_legal_moves():
@@ -88,13 +93,71 @@ class Rule_Based_Agent:
 
         return random.choice(self.game.find_legal_moves())
 
+def simulate_game(bots):
+    game = Connect4()
+    agent1 = None
+    agent2 = None
+    valid1 = False
+    valid2 = False
+    valid_num = False
+    num_of_games = 0
+    agent1_wins = 0
+    agent2_wins = 0
+    draws = 0
+    while not valid_num:
+        try:
+            num_of_games = int(input("How many games should be played: "))
+            valid_num = True
+        except ValueError:
+            print("Invalid input, try again")
+    match bots:
+        case 1:
+            agent1 = Random_Agent(game, "R", "Y")
+            agent2 = Rule_Based_Agent(game, "Y", "R")
+    for x in range(num_of_games):
+        while True:
+            if bots == 1:
+                while not valid1:
+                    col = agent1.Random_Move()
+                    if col in game.find_legal_moves():
+                        if game.make_move(col, agent1.AI_Player):
+                            valid1 = True
+
+                if game.check_for_win(agent1.AI_Player):
+                    print(agent1.AI_Player + " wins")
+                    agent1_wins+=1
+                    game.reset_board()
+                    break
+
+                while not valid2:
+                    col = agent2.Make_Move(game.board)
+                    if col in game.find_legal_moves():
+                        if game.make_move(col, agent2.AI_Player):
+                            valid2 = True
+
+                if game.check_for_win(agent2.AI_Player):
+                    print(agent2.AI_Player + " wins")
+                    agent2_wins += 1
+                    game.reset_board()
+                    break
+
+                if game.draw():
+                    print("Draw")
+                    draws+=1
+                    game.reset_board()
+                    break
+
+                valid1 = False
+                valid2 = False
+    print("Agent 1 wins " + agent1.AI_Player + ": " + str(agent1_wins) + "\nAgent 2 wins " + agent2.AI_Player + ": " + str(agent2_wins))
+
 
 def play(opponent):
     game = Connect4()
-    agent = Random_Agent(game)
+    agent = None
     match opponent:
-        case 1: agent = Random_Agent(game)
-        case 2: agent = Rule_Based_Agent(game)
+        case 1: agent = Random_Agent(game, "Y", "R")
+        case 2: agent = Rule_Based_Agent(game, "Y", "R")
     valid = False
     AIvalid = False
     print("Red vs Yellow")
@@ -152,15 +215,15 @@ def play(opponent):
         valid = False
         AIvalid = False
 
-def main_menu():
+def choose_bots():
     valid = False
     choice = 0
-    print("Connect 4")
-    print("1) Random Agent \n 2) Rule Based Agent \n 3) Minimax Agent \n 4) ML Agent \n 5) P1 VS P2")
+    print("Choose Bot Game")
+    print("1) Random Agent vs Rule Based Agent \n2) Rule Based Agent vs Minimax Agent \n3) Minimax Agent vs ML Agent")
     while not valid:
         try:
-            choice = int(input("Please choose a Game Mode: "))
-            if 6 > choice > 0:
+            choice = int(input("Please choose a Match: "))
+            if 4 > choice > 0:
                 valid = True
             else:
                 print("Invalid input, try again")
@@ -168,5 +231,26 @@ def main_menu():
             print("Invalid input, try again")
     return choice
 
+def main_menu():
+    valid = False
+    choice = 0
+    print("Connect 4")
+    print("1) Random Agent \n2) Rule Based Agent \n3) Minimax Agent \n4) ML Agent \n5) P1 VS P2 \n6) Bot vs Bot")
+    while not valid:
+        try:
+            choice = int(input("Please choose a Game Mode: "))
+            if 7 > choice > 0:
+                valid = True
+            else:
+                print("Invalid input, try again")
+        except ValueError:
+            print("Invalid input, try again")
+    return choice
+
+
 player = main_menu()
-play(player)
+if player < 6:
+    play(player)
+else:
+    bots = choose_bots()
+    simulate_game(bots)
