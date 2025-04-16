@@ -7,32 +7,31 @@ class Connect4:
         self.board = np.full((6,7), ' ')
         self.currentPlayer = 'R'
 
-    def print_board(self):
+    def Print_Board(self):
         for row in self.board:
             print(" | ".join(row))
             print("-"*25)
 
-    def reset_board(self):
+    def Reset_Board(self):
         for row in range(6):
             for col in range(7):
                 self.board[row, col] = ' '
 
-    def find_legal_moves(self):
+    def Find_Legal_Moves(self):
         legal_moves = []
-        for row in range(6):
-            for col in range(7):
-                if self.board[row, col] == ' ':
-                    legal_moves.append(col)
+        for col in range(7):
+            if self.board[0, col] == ' ':
+                legal_moves.append(col)
         return legal_moves
 
-    def make_move(self, col, player):
+    def Make_Move(self, col, player):
         for row in range(5, -1, -1):
             if self.board[row, col] == ' ':
                 self.board[row, col] = player
                 return True
         return False
 
-    def check_for_win(self, player):
+    def Check_for_Win(self, player):
         # Horizontal
         for col in range(4):
             for row in range(6):
@@ -54,7 +53,7 @@ class Connect4:
                 if self.board[row, col] == player and self.board[row-1, col+1] == player and self.board[row-2, col+2] == player and self.board[row-3, col+3] == player:
                     return True
 
-    def draw(self):
+    def Draw(self):
         return ' ' not in self.board
 
 class Random_Agent:
@@ -64,7 +63,7 @@ class Random_Agent:
         self.Human_Player = Human_Player
 
     def Random_Move(self):
-        return random.choice(self.game.find_legal_moves())
+        return random.choice(self.game.Find_Legal_Moves())
 
 class Rule_Based_Agent:
     def __init__(self, game, AI_Player, Human_Player):
@@ -73,25 +72,98 @@ class Rule_Based_Agent:
         self.Human_Player = Human_Player
 
     def Make_Move(self, Board):
-        for col in self.game.find_legal_moves():
+        for col in self.game.Find_Legal_Moves():
             for row in range(5, -1, -1):
                 if Board[row, col] == ' ':
                     Board[row, col] = self.AI_Player
-                    if self.game.check_for_win(self.AI_Player):
+                    if self.game.Check_for_Win(self.AI_Player):
                         Board[row, col] = ' '
                         return col
                     Board[row, col] = ' '
 
-        for col in self.game.find_legal_moves():
+        for col in self.game.Find_Legal_Moves():
             for row in range(5, -1, -1):
                 if Board[row, col] == ' ':
                     Board[row, col] = self.Human_Player
-                    if self.game.check_for_win(self.Human_Player):
+                    if self.game.Check_for_Win(self.Human_Player):
                         Board[row, col] = ' '
                         return col
                     Board[row, col] = ' '
 
-        return random.choice(self.game.find_legal_moves())
+        return random.choice(self.game.Find_Legal_Moves())
+
+
+class MiniMax_Agent:
+    def __init__(self, game, AI_Player, Human_Player):
+        self.game = game
+        self.AI_Player = AI_Player
+        self.Human_Player = Human_Player
+        self.max_depth = 5
+
+    def Score_Position(self, player):
+        score = 0
+        board = self.game.board
+        center_array = [board[row][3] for row in range(6)]
+        score += center_array.count(player) * 3
+        return score
+
+    def Minimax(self, depth, alpha, beta, is_maximising):
+        if self.game.Check_for_Win(self.AI_Player):
+            return 10 - depth
+        elif self.game.Check_for_Win(self.Human_Player):
+            return depth - 10
+        if self.game.Draw():
+            return 0
+        if depth >= self.max_depth:
+            return self.Score_Position(self.AI_Player) - self.Score_Position(self.Human_Player)
+
+        if is_maximising:
+            max_eval = -np.inf
+            for col in self.game.Find_Legal_Moves():
+                row = self.Next_Open_Row(col)
+                if row is not None:
+                    self.game.board[row, col] = self.AI_Player
+                    eval = self.Minimax(depth + 1, alpha, beta, False)
+                    self.game.board[row, col] = ' '
+                    max_eval = max(max_eval, eval)
+                    alpha = max(alpha, eval)
+                    if beta <= alpha:
+                        break
+            return max_eval
+        else:
+            min_eval = np.inf
+            for col in self.game.Find_Legal_Moves():
+                row = self.Next_Open_Row(col)
+                if row is not None:
+                    self.game.board[row, col] = self.Human_Player
+                    eval = self.Minimax(depth + 1, alpha, beta, True)
+                    self.game.board[row, col] = ' '
+                    min_eval = min(min_eval, eval)
+                    beta = min(beta, eval)
+                    if beta <= alpha:
+                        break
+            return min_eval
+
+    def Best_Move(self):
+        best_val = -np.inf
+        move = None
+        for col in self.game.Find_Legal_Moves():
+            row = self.Next_Open_Row(col)
+            if row is not None:
+                self.game.board[row, col] = self.AI_Player
+                move_val = self.Minimax(0, -np.inf, np.inf, False)
+                self.game.board[row, col] = ' '
+                if move_val > best_val:
+                    best_val = move_val
+                    move = col
+        return move
+
+    def Next_Open_Row(self, col):
+        for row in range(5, -1, -1):
+            if self.game.board[row, col] == ' ':
+                return row
+        return None
+
 
 def simulate_game(bots):
     game = Connect4()
@@ -114,42 +186,61 @@ def simulate_game(bots):
         case 1:
             agent1 = Random_Agent(game, "R", "Y")
             agent2 = Rule_Based_Agent(game, "Y", "R")
+        case 2:
+            agent1 = Rule_Based_Agent(game, "R", "Y")
+            agent2 = MiniMax_Agent(game, "Y", "R")
     for x in range(num_of_games):
         while True:
             if bots == 1:
                 while not valid1:
                     col = agent1.Random_Move()
-                    if col in game.find_legal_moves():
-                        if game.make_move(col, agent1.AI_Player):
+                    if col in game.Find_Legal_Moves():
+                        if game.Make_Move(col, agent1.AI_Player):
                             valid1 = True
 
-                if game.check_for_win(agent1.AI_Player):
-                    print(agent1.AI_Player + " wins")
-                    agent1_wins+=1
-                    game.reset_board()
-                    break
+            if bots == 2:
+                while not valid1:
+                    col = agent1.Make_Move(game.board)
+                    if col in game.Find_Legal_Moves():
+                        if game.Make_Move(col, agent1.AI_Player):
+                            valid1 = True
 
+            if game.Check_for_Win(agent1.AI_Player):
+                print(agent1.AI_Player + " wins")
+                agent1_wins+=1
+                game.Reset_Board()
+                break
+
+            if bots == 1:
                 while not valid2:
                     col = agent2.Make_Move(game.board)
-                    if col in game.find_legal_moves():
-                        if game.make_move(col, agent2.AI_Player):
+                    if col in game.Find_Legal_Moves():
+                        if game.Make_Move(col, agent2.AI_Player):
                             valid2 = True
 
-                if game.check_for_win(agent2.AI_Player):
-                    print(agent2.AI_Player + " wins")
-                    agent2_wins += 1
-                    game.reset_board()
-                    break
+            if bots == 2:
+                while not valid2:
+                    col = agent2.Best_Move()
+                    if col in game.Find_Legal_Moves():
+                        if game.Make_Move(col, agent2.AI_Player):
+                            valid2 = True
 
-                if game.draw():
-                    print("Draw")
-                    draws+=1
-                    game.reset_board()
-                    break
+            if game.Check_for_Win(agent2.AI_Player):
+                print(agent2.AI_Player + " wins")
+                agent2_wins += 1
+                game.Reset_Board()
+                break
 
-                valid1 = False
-                valid2 = False
-    print("Agent 1 wins " + agent1.AI_Player + ": " + str(agent1_wins) + "\nAgent 2 wins " + agent2.AI_Player + ": " + str(agent2_wins))
+            if game.Draw():
+                print("Draw")
+                draws+=1
+                game.Reset_Board()
+                break
+
+            valid1 = False
+            valid2 = False
+
+    print("Agent 1 wins " + agent1.AI_Player + ": " + str(agent1_wins) + "\nAgent 2 wins " + agent2.AI_Player + ": " + str(agent2_wins) + "\nDraws:" + str(draws))
 
 
 def play(opponent):
@@ -158,18 +249,19 @@ def play(opponent):
     match opponent:
         case 1: agent = Random_Agent(game, "Y", "R")
         case 2: agent = Rule_Based_Agent(game, "Y", "R")
+        case 3: agent = MiniMax_Agent(game, "Y", "R")
     valid = False
     AIvalid = False
     print("Red vs Yellow")
     while True:
-        game.print_board()
+        game.Print_Board()
         print(game.currentPlayer + "'s turn")
         if game.currentPlayer == "R" or opponent == 5:
             while not valid:
                 try:
                     col = int(input("Pick a column(0-6): "))
-                    if col in game.find_legal_moves():
-                        if game.make_move(col, game.currentPlayer):
+                    if col in game.Find_Legal_Moves():
+                        if game.Make_Move(col, game.currentPlayer):
                             valid = True
                         else:
                             print("Column Full")
@@ -178,32 +270,39 @@ def play(opponent):
                 except ValueError:
                     print("Invalid input, try again")
 
-        if game.check_for_win(game.currentPlayer):
-            game.print_board()
+        if game.Check_for_Win(game.currentPlayer):
+            game.Print_Board()
             print(game.currentPlayer + " wins")
             break
 
         if opponent == 1:
             while not AIvalid:
                 col = agent.Random_Move()
-                if col in game.find_legal_moves():
-                    if game.make_move(col, agent.AI_Player):
+                if col in game.Find_Legal_Moves():
+                    if game.Make_Move(col, agent.AI_Player):
                         AIvalid = True
 
         elif opponent == 2:
             while not AIvalid:
                 col = agent.Make_Move(game.board)
-                if col in game.find_legal_moves():
-                    if game.make_move(col, agent.AI_Player):
+                if col in game.Find_Legal_Moves():
+                    if game.Make_Move(col, agent.AI_Player):
                         AIvalid = True
 
-        if game.check_for_win(agent.AI_Player):
-            game.print_board()
+        elif opponent == 3:
+            while not AIvalid:
+                col = agent.Best_Move()
+                if col in game.Find_Legal_Moves():
+                    if game.Make_Move(col, agent.AI_Player):
+                        AIvalid = True
+
+        if game.Check_for_Win(agent.AI_Player):
+            game.Print_Board()
             print(agent.AI_Player + " wins")
             break
 
-        if game.draw():
-            game.print_board()
+        if game.Draw():
+            game.Print_Board()
             print("Draw")
             break
 
