@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import pandas as pd
+import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
 from sklearn.neural_network import MLPClassifier
@@ -75,24 +76,24 @@ class Rule_Based_Agent:
         self.AI_Player = AI_Player
         self.Human_Player = Human_Player
 
-    def Make_Move(self, Board):
+    def Make_Move(self):
         for col in self.game.Find_Legal_Moves():
             for row in range(5, -1, -1):
-                if Board[row, col] == ' ':
-                    Board[row, col] = self.AI_Player
+                if self.game.board[row, col] == ' ':
+                    self.game.board[row, col] = self.AI_Player
                     if self.game.Check_for_Win(self.AI_Player):
-                        Board[row, col] = ' '
+                        self.game.board[row, col] = ' '
                         return col
-                    Board[row, col] = ' '
+                    self.game.board[row, col] = ' '
 
         for col in self.game.Find_Legal_Moves():
             for row in range(5, -1, -1):
-                if Board[row, col] == ' ':
-                    Board[row, col] = self.Human_Player
+                if self.game.board[row, col] == ' ':
+                    self.game.board[row, col] = self.Human_Player
                     if self.game.Check_for_Win(self.Human_Player):
-                        Board[row, col] = ' '
+                        self.game.board[row, col] = ' '
                         return col
-                    Board[row, col] = ' '
+                    self.game.board[row, col] = ' '
 
         return random.choice(self.game.Find_Legal_Moves())
 
@@ -204,7 +205,7 @@ class ML_Agent:
     def Make_Move(self):
         best_move = None
         best_score = -np.inf
-        #check for a win
+
         for col in self.game.Find_Legal_Moves():
             for row in range(5, -1, -1):
                 if self.game.board[row, col] == ' ':
@@ -214,7 +215,7 @@ class ML_Agent:
                         return col
                     self.game.board[row, col] = ' '
                     break
-        #check for a block
+
         for col in self.game.Find_Legal_Moves():
             for row in range(5, -1, -1):
                 if self.game.board[row, col] == ' ':
@@ -224,7 +225,7 @@ class ML_Agent:
                         return col
                     self.game.board[row, col] = ' '
                     break
-        #the ML model chooses a move otherwise
+
         for col in self.game.Find_Legal_Moves():
             temp_board = self.game.board.copy()
             for row in range(5, -1, -1):
@@ -304,7 +305,12 @@ def simulate_game(bots):
             valid1 = False
             valid2 = False
 
-    print("Agent 1 wins " + agent1.AI_Player + ": " + str(agent1_wins) + "\nAgent 2 wins " + agent2.AI_Player + ": " + str(agent2_wins) + "\nDraws:" + str(draws))
+    x = np.array(["Agent 1 Wins", "Agent 2 Wins", "Draws"])
+    y = np.array([agent1_wins, agent2_wins, draws])
+    plt.bar(x, y)
+    for i in range(len(x)):
+        plt.text(i, float(y[i]), str(y[i]))
+    plt.show()
 
 
 def play(opponent):
