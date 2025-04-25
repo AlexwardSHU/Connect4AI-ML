@@ -1,6 +1,7 @@
 import random
 import numpy as np
 import pandas as pd
+import time
 import matplotlib.pyplot as plt
 from sklearn import preprocessing
 from sklearn.model_selection import train_test_split
@@ -271,6 +272,7 @@ def simulate_game(bots):
             agent1 = MiniMax_Agent(game, "R", "Y")
             agent2 = ML_Agent(game, 'Y', 'R')
     for x in range(num_of_games):
+        start = time.time()
         while True:
             while not valid1:
                 col = agent1.Make_Move()
@@ -279,7 +281,6 @@ def simulate_game(bots):
                         valid1 = True
 
             if game.Check_for_Win(agent1.AI_Player):
-                print(agent1.AI_Player + " wins")
                 agent1_wins+=1
                 game.Reset_Board()
                 break
@@ -291,19 +292,20 @@ def simulate_game(bots):
                         valid2 = True
 
             if game.Check_for_Win(agent2.AI_Player):
-                print(agent2.AI_Player + " wins")
                 agent2_wins += 1
                 game.Reset_Board()
                 break
 
             if game.Draw():
-                print("Draw")
                 draws+=1
                 game.Reset_Board()
                 break
 
             valid1 = False
             valid2 = False
+        end = time.time()
+        length = end - start
+        print("Game " + str(x + 1) + " took " + str(length) + " seconds")
 
     x = np.array(["Agent 1 Wins", "Agent 2 Wins", "Draws"])
     y = np.array([agent1_wins, agent2_wins, draws])
